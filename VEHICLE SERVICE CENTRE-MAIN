@@ -1,0 +1,35 @@
+package VECHILE;
+
+import javax.swing.*;
+
+public class Main {
+
+    // Launch the main application UI
+    public void createAndShowUI() {
+        // Test database connection (optional)
+        DBConnection.connect(); // You can comment this out if not needed
+
+        JFrame mainFrame = new JFrame("Vehicle Service Center");
+        mainFrame.setSize(400, 200);
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setLayout(null);
+
+        JButton customerButton = new JButton("Register Customer");
+        customerButton.setBounds(100, 30, 200, 30);
+        mainFrame.add(customerButton);
+        customerButton.addActionListener(e -> new CustomerForm());
+
+        JButton serviceButton = new JButton("Add Service");
+        serviceButton.setBounds(100, 80, 200, 30);
+        mainFrame.add(serviceButton);
+        serviceButton.addActionListener(e -> new LoginPage());
+
+        mainFrame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new LoginPage().show(); // Show login screen first
+        });
+    }
+}
