@@ -1,0 +1,363 @@
+package VECHILE;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.HashMap;
+import java.util.Map;
+
+public class LoginPage {
+    private JFrame loginFrame;
+    private JTextField emailField;
+    private JPasswordField passwordField;
+    private CustomerForm mainApp;
+    private JPanel cardPanel;
+    private CardLayout cardLayout;
+    
+    // User storage
+    private Map<String, String> userDatabase = new HashMap<>();
+    private Map<String, String[]> userDetails = new HashMap<>();
+    
+    // UI Colors
+    private final Color PRIMARY_COLOR = new Color(0, 102, 102);
+    private final Color BACKGROUND_COLOR = new Color(245, 248, 250);
+    private final Color CARD_COLOR = Color.WHITE;
+    private final Color LINK_COLOR = new Color(13, 110, 253);
+
+    public LoginPage() {
+        // Add default admin user
+        userDatabase.put("admin@rimax.com", "admin123");
+        userDetails.put("admin@rimax.com", new String[]{"Admin", "User"});
+        
+        createLoginUI();
+    }
+
+    private void createLoginUI() {
+        loginFrame = new JFrame("Rimax Auto - Login");
+        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loginFrame.setSize(450, 550);
+        loginFrame.setLocationRelativeTo(null);
+        loginFrame.setLayout(new BorderLayout());
+        loginFrame.getContentPane().setBackground(BACKGROUND_COLOR);
+
+        // Card layout for login/register switching
+        cardLayout = new CardLayout();
+        cardPanel = new JPanel(cardLayout);
+        cardPanel.setBackground(BACKGROUND_COLOR);
+
+        // Login Panel
+        JPanel loginPanel = createLoginPanel();
+        cardPanel.add(loginPanel, "login");
+
+        // Register Panel
+        JPanel registerPanel = createRegisterPanel();
+        cardPanel.add(registerPanel, "register");
+
+        loginFrame.add(cardPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createLoginPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Login card
+        JPanel loginCard = new JPanel();
+        loginCard.setLayout(new BoxLayout(loginCard, BoxLayout.Y_AXIS));
+        loginCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
+                BorderFactory.createEmptyBorder(30, 30, 30, 30)));
+        loginCard.setBackground(CARD_COLOR);
+        loginCard.setMaximumSize(new Dimension(350, 450));
+
+        // Title
+        JLabel titleLabel = new JLabel("Welcome");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(PRIMARY_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 30, 0));
+
+        // Email field
+        JPanel emailPanel = createInputPanel("Email Address", "Enter your email");
+        emailField = (JTextField) emailPanel.getComponent(1);
+
+        // Password field
+        JPanel passwordPanel = createInputPanel("Password", "Enter your password");
+        passwordField = (JPasswordField) passwordPanel.getComponent(1);
+
+        // Forgot password link
+        JLabel forgotPassword = new JLabel("<html><u>Forgot Password?</u></html>");
+        forgotPassword.setForeground(LINK_COLOR);
+        forgotPassword.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        forgotPassword.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        forgotPassword.setAlignmentX(Component.CENTER_ALIGNMENT);
+        forgotPassword.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                JOptionPane.showMessageDialog(loginFrame,
+                    "Password reset instructions sent to your email",
+                    "Password Recovery",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        // Login button
+        JButton loginButton = new JButton("Login");
+        styleButton(loginButton);
+        loginButton.addActionListener(e -> attemptLogin());
+
+        // Register link
+        JPanel registerLinkPanel = new JPanel();
+        registerLinkPanel.setBackground(CARD_COLOR);
+        registerLinkPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel registerText = new JLabel("Don't have an account? ");
+        registerText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        JLabel registerLink = new JLabel("<html><u>Register</u></html>");
+        registerLink.setForeground(LINK_COLOR);
+        registerLink.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        registerLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        registerLink.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                cardLayout.show(cardPanel, "register");
+                loginFrame.setTitle("Rimax Auto - Register");
+            }
+        });
+        
+        registerLinkPanel.add(registerText);
+        registerLinkPanel.add(registerLink);
+
+        // Add components to card
+        loginCard.add(titleLabel);
+        loginCard.add(Box.createRigidArea(new Dimension(0, 20)));
+        loginCard.add(emailPanel);
+        loginCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        loginCard.add(passwordPanel);
+        loginCard.add(Box.createRigidArea(new Dimension(0, 5)));
+        loginCard.add(forgotPassword);
+        loginCard.add(Box.createRigidArea(new Dimension(0, 20)));
+        loginCard.add(loginButton);
+        loginCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        loginCard.add(registerLinkPanel);
+
+        panel.add(loginCard);
+        return panel;
+    }
+
+    private JPanel createRegisterPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Register card
+        JPanel registerCard = new JPanel();
+        registerCard.setLayout(new BoxLayout(registerCard, BoxLayout.Y_AXIS));
+        registerCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
+                BorderFactory.createEmptyBorder(30, 30, 30, 30)));
+        registerCard.setBackground(CARD_COLOR);
+        registerCard.setMaximumSize(new Dimension(350, 550));
+
+        // Title
+        JLabel titleLabel = new JLabel("Create Account");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(PRIMARY_COLOR);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 30, 0));
+
+        // First Name field
+        JPanel firstNamePanel = createInputPanel("First Name", "Enter your first name");
+        JTextField firstNameField = (JTextField) firstNamePanel.getComponent(1);
+
+        // Last Name field
+        JPanel lastNamePanel = createInputPanel("Last Name", "Enter your last name");
+        JTextField lastNameField = (JTextField) lastNamePanel.getComponent(1);
+
+        // Email field
+        JPanel emailPanel = createInputPanel("Email", "Enter your email");
+        JTextField registerEmailField = (JTextField) emailPanel.getComponent(1);
+
+        // Password field
+        JPanel passwordPanel = createInputPanel("Password", "Create a password");
+        JPasswordField registerPasswordField = (JPasswordField) passwordPanel.getComponent(1);
+
+        // Confirm Password field
+        JPanel confirmPanel = createInputPanel("Confirm Password", "Re-enter your password");
+        JPasswordField confirmPasswordField = (JPasswordField) confirmPanel.getComponent(1);
+
+        // Register button
+        JButton registerButton = new JButton("Register");
+        styleButton(registerButton);
+        registerButton.addActionListener(e -> {
+            // Validate passwords match
+            if (!new String(registerPasswordField.getPassword()).equals(
+                new String(confirmPasswordField.getPassword()))) {
+                JOptionPane.showMessageDialog(loginFrame,
+                    "Passwords do not match",
+                    "Registration Error",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Check if email already exists
+            if (userDatabase.containsKey(registerEmailField.getText().trim())) {
+                JOptionPane.showMessageDialog(loginFrame,
+                    "Email already registered",
+                    "Registration Error",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Store new user
+            String email = registerEmailField.getText().trim();
+            String password = new String(registerPasswordField.getPassword()).trim();
+            
+            userDatabase.put(email, password);
+            userDetails.put(email, new String[]{
+                firstNameField.getText().trim(),
+                lastNameField.getText().trim()
+            });
+            
+            JOptionPane.showMessageDialog(loginFrame,
+                "Registration successful!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            // Clear fields and switch to login
+            firstNameField.setText("");
+            lastNameField.setText("");
+            registerEmailField.setText("");
+            registerPasswordField.setText("");
+            confirmPasswordField.setText("");
+            cardLayout.show(cardPanel, "login");
+            loginFrame.setTitle("Rimax Auto - Login");
+        });
+
+        // Back to login link
+        JLabel loginLink = new JLabel("<html><u>Back to Login</u></html>");
+        loginLink.setForeground(LINK_COLOR);
+        loginLink.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        loginLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        loginLink.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginLink.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                cardLayout.show(cardPanel, "login");
+                loginFrame.setTitle("Rimax Auto - Login");
+            }
+        });
+
+        // Add components to card
+        registerCard.add(titleLabel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 20)));
+        registerCard.add(firstNamePanel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        registerCard.add(lastNamePanel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        registerCard.add(emailPanel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        registerCard.add(passwordPanel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        registerCard.add(confirmPanel);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 20)));
+        registerCard.add(registerButton);
+        registerCard.add(Box.createRigidArea(new Dimension(0, 15)));
+        registerCard.add(loginLink);
+
+        panel.add(registerCard);
+        return panel;
+    }
+
+    private JPanel createInputPanel(String labelText, String placeholder) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(CARD_COLOR);
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.setBorder(new EmptyBorder(0, 0, 5, 0));
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        label.setForeground(new Color(73, 80, 87));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setBorder(new EmptyBorder(0, 0, 5, 0));
+
+        JComponent field;
+        if (labelText.contains("Password")) {
+            field = new JPasswordField();
+            ((JPasswordField)field).setEchoChar('•');
+        } else {
+            field = new JTextField();
+        }
+        
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(206, 212, 218)),
+                BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+        field.setMaximumSize(new Dimension(250, 35));
+        field.putClientProperty("JTextField.placeholderText", placeholder);
+        field.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                ((JComponent)e.getSource()).setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, PRIMARY_COLOR),
+                    BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+            }
+            public void focusLost(FocusEvent e) {
+                ((JComponent)e.getSource()).setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(206, 212, 218)),
+                    BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+            }
+        });
+
+        panel.add(label);
+        panel.add(field);
+        
+        return panel;
+    }
+
+    private void styleButton(JButton button) {
+        button.setBackground(PRIMARY_COLOR);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
+        button.setFocusPainted(false);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(250, 45));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(0, 86, 86));
+            }
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(PRIMARY_COLOR);
+            }
+        });
+    }
+
+    private void attemptLogin() {
+        String email = emailField.getText().trim();
+        String password = new String(passwordField.getPassword()).trim();
+
+        if (userDatabase.containsKey(email) && userDatabase.get(email).equals(password)) {
+            loginFrame.dispose();
+            SwingUtilities.invokeLater(() -> {
+                mainApp = new CustomerForm();
+                mainApp.createUI();
+            });
+        } else {
+            JOptionPane.showMessageDialog(loginFrame,
+                "Invalid email or password",
+                "Login Failed",
+                JOptionPane.ERROR_MESSAGE);
+            passwordField.setText("");
+        }
+    }
+
+    public void show() {
+        loginFrame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new LoginPage().show());
+    }
+}
