@@ -1,0 +1,116 @@
+package VECHILE;
+
+import java.sql.*;
+
+public class DBConnection {
+
+    private static final String DB_URL = "jdbc:sqlite:service_center.db"; // SQLite database file
+
+    // Method to connect to the database
+    public static Connection connect() throws SQLException {
+        return DriverManager.getConnection(DB_URL);
+    }
+
+    // Method to initialize the database (create tables if they don't exist)
+    public static void initializeDatabase() {
+        String createCustomersTableSQL = "CREATE TABLE IF NOT EXISTS customers (" +
+                "customer_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "first_name TEXT NOT NULL," +
+                "last_name TEXT NOT NULL," +
+                "email TEXT NOT NULL UNIQUE," +
+                "phone TEXT" +
+                ");";
+
+        String createVehiclesTableSQL = "CREATE TABLE IF NOT EXISTS vehicles (" +
+                "vehicle_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "customer_id INTEGER NOT NULL," +
+                "make TEXT NOT NULL," +
+                "model TEXT NOT NULL," +
+                "year INTEGER," +
+                "license_plate TEXT," +
+                "FOREIGN KEY (customer_id) REFERENCES customers (customer_id)" +
+                ");";
+
+        String createServiceRecordsTableSQL = "CREATE TABLE IF NOT EXISTS service_records (" +
+                "service_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "vehicle_id INTEGER NOT NULL," +
+                "service_date TEXT NOT NULL," +
+                "service_type TEXT NOT NULL," +
+                "status TEXT NOT NULL," +
+                "FOREIGN KEY (vehicle_id) REFERENCES vehicles (vehicle_id)" +
+                ");";
+
+        String createVehicleStatusTableSQL = "CREATE TABLE IF NOT EXISTS vehicle_status (" +
+                "status_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "vehicle_id INTEGER NOT NULL," +
+                "status TEXT NOT NULL," +
+                "update_date TEXT NOT NULL," +
+                "FOREIGN KEY (vehicle_id) REFERENCES vehicles (vehicle_id)" +
+                ");";
+
+        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+            stmt.execute(createCustomersTableSQL);
+            stmt.execute(createVehiclesTableSQL);
+            stmt.execute(createServiceRecordsTableSQL);
+            stmt.execute(createVehicleStatusTableSQL);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Add new customer to the database
+    public static void insertCustomer(String firstName, String lastName, String email, String phone) {
+        String sql = "INSERT INTO customers (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, firstName);
+            pstmt.setString(2, lastName);
+            pstmt.setString(3, email);
+            pstmt.setString(4, phone);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Add new vehicle to the database
+    public static void insertVehicle(int customerId, String make, String model, int year, String licensePlate) {
+        String sql = "INSERT INTO vehicles (customer_id, make, model, year, license_plate) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, customerId);
+            pstmt.setString(2, make);
+            pstmt.setString(3, model);
+            pstmt.setInt(4, year);
+            pstmt.setString(5, licensePlate);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Add service record to the database
+    public static void insertServiceRecord(int vehicleId, String serviceDate, String serviceType, String status) {
+        String sql = "INSERT INTO service_records (vehicle_id, service_date, service_type, status) VALUES (?, ?, ?, ?)";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, vehicleId);
+            pstmt.setString(2, serviceDate);
+            pstmt.setString(3, serviceType);
+            pstmt.setString(4, status);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Add vehicle status to the database
+    public static void insertVehicleStatus(int vehicleId, String status, String updateDate) {
+        String sql = "INSERT INTO vehicle_status (vehicle_id, status, update_date) VALUES (?, ?, ?)";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, vehicleId);
+            pstmt.setString(2, status);
+            pstmt.setString(3, updateDate);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
