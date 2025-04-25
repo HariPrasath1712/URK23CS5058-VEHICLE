@@ -1,0 +1,739 @@
+package VECHILE;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.RoundRectangle2D;
+
+public class CustomerForm {
+
+    private JFrame frame;
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+
+    // Customer components
+    private JTextField tfNIC, tfName, tfAddress, tfHome, tfMobile, tfEmail, tfDate;
+    private DefaultTableModel customerModel;
+    private JTable customerTable;
+
+    // Vehicle components
+    private DefaultTableModel vehicleModel;
+    private JTable vehicleTable;
+    private JTextField tfVehicleReg, tfVehicleType, tfVehicleMake, tfVehicleModel, tfVehicleYear, tfVehicleColor;
+    private JButton btnUpdateVehicle, btnDeleteVehicle;
+
+    // Service components
+    private DefaultTableModel serviceModel, serviceResultModel, returnModel, waitingRepairModel, waitingCleanModel;
+
+    // Colors
+    private final Color PRIMARY_COLOR = new Color(0, 102, 102); // Teal
+    private final Color SECONDARY_COLOR = new Color(0, 153, 153); // Lighter teal
+    private final Color ACCENT_COLOR = new Color(255, 153, 0); // Orange
+    private final Color BACKGROUND_COLOR = new Color(245, 248, 250); // Light blue-gray
+    private final Color CARD_COLOR = Color.WHITE;
+    private final Color TABLE_HEADER_COLOR = new Color(0, 102, 102);
+    private final Color HIGHLIGHT_COLOR = new Color(220, 240, 240);
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new CustomerForm().createUI());
+    }
+
+    void createUI() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.put("Button.background", PRIMARY_COLOR);
+            UIManager.put("Button.foreground", Color.WHITE);
+            UIManager.put("Button.focus", new Color(0, 0, 0, 0));
+            UIManager.put("Button.border", BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        frame = new JFrame("Rimax Auto - Management System");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(1280, 768);
+        frame.setMinimumSize(new Dimension(1024, 600));
+        frame.setLayout(new BorderLayout());
+        frame.getContentPane().setBackground(BACKGROUND_COLOR);
+
+        // Create sidebar
+        JPanel sidebar = createSidebar();
+        frame.add(sidebar, BorderLayout.WEST);
+
+        // Create main panel with card layout
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+
+        // Add cards
+        mainPanel.add(createCustomerPanel(), "Customers");
+        mainPanel.add(createVehiclePanel(), "Vehicles");
+        mainPanel.add(createServicePanel(), "Add to Service");
+        mainPanel.add(createServiceResultPanel(), "Service Result");
+        mainPanel.add(createVehicleReturnPanel(), "Vehicle Return");
+        mainPanel.add(createWaitingRepairPanel(), "Waiting-Repair");
+        mainPanel.add(createWaitingCleanPanel(), "Waiting-Clean");
+
+        frame.add(mainPanel, BorderLayout.CENTER);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBackground(new Color(20, 30, 40)); // Dark blue-gray
+        sidebar.setPreferredSize(new Dimension(250, 0));
+        sidebar.setBorder(new EmptyBorder(20, 15, 20, 15));
+
+        // Add logo
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        logoPanel.setBackground(new Color(20, 30, 40));
+        logoPanel.setBorder(new EmptyBorder(0, 0, 30, 0));
+        
+        JLabel logoLabel = new JLabel("RIMAX AUTO");
+        logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        logoLabel.setForeground(Color.WHITE);
+        logoPanel.add(logoLabel);
+        sidebar.add(logoPanel);
+
+        String[] pages = {"Customers", "Vehicles", "Add to Service", "Service Result", 
+                         "Vehicle Return", "Waiting-Repair", "Waiting-Clean"};
+
+        for (String label : pages) {
+            JButton btn = new JButton(label);
+            styleSidebarButton(btn);
+            btn.addActionListener(e -> cardLayout.show(mainPanel, label));
+            sidebar.add(btn);
+            sidebar.add(Box.createRigidArea(new Dimension(0, 8)));
+        }
+
+        sidebar.add(Box.createVerticalGlue());
+
+        // Add user profile and logout
+        JPanel userPanel = new JPanel();
+        userPanel.setLayout(new BoxLayout(userPanel, BoxLayout.Y_AXIS));
+        userPanel.setBackground(new Color(20, 30, 40));
+        userPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
+        
+        // User info (placeholder)
+        JLabel userLabel = new JLabel("Admin User");
+        userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        userLabel.setForeground(new Color(200, 200, 200));
+        userLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        userPanel.add(userLabel);
+        
+        JLabel roleLabel = new JLabel("Administrator");
+        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        roleLabel.setForeground(new Color(150, 150, 150));
+        roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        userPanel.add(roleLabel);
+        
+        sidebar.add(userPanel);
+        
+        // Logout button
+        JButton logoutBtn = new JButton("Logout");
+        styleSidebarButton(logoutBtn);
+        logoutBtn.setBackground(new Color(60, 70, 80));
+        logoutBtn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        logoutBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logoutBtn.addActionListener(e -> System.exit(0));
+        sidebar.add(Box.createRigidArea(new Dimension(0, 15)));
+        sidebar.add(logoutBtn);
+
+        return sidebar;
+    }
+
+    private void styleSidebarButton(JButton button) {
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(220, 45));
+        button.setBackground(new Color(40, 50, 60));
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(60, 70, 80));
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(new Color(40, 50, 60));
+            }
+        });
+    }
+
+    private JPanel createCustomerPanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Header Panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+        
+        JLabel titleLabel = new JLabel("Customer Management");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(60, 60, 60));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Search panel
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        searchPanel.setBackground(BACKGROUND_COLOR);
+        
+        JTextField searchField = new JTextField(20);
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        searchField.putClientProperty("JTextField.placeholderText", "Search customers...");
+        
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchBtn.setBackground(SECONDARY_COLOR);
+        searchBtn.setForeground(Color.WHITE);
+        searchBtn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        searchBtn.setFocusPainted(false);
+        
+        searchPanel.add(searchField);
+        searchPanel.add(searchBtn);
+        headerPanel.add(searchPanel, BorderLayout.EAST);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout(15, 15));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Form Panel
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 15, 15));
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                new RoundBorder(PRIMARY_COLOR, 10),
+                new EmptyBorder(15, 15, 15, 15)));
+        formPanel.setBackground(CARD_COLOR);
+
+        tfNIC = createStyledTextField();
+        tfName = createStyledTextField();
+        tfAddress = createStyledTextField();
+        tfHome = createStyledTextField();
+        tfMobile = createStyledTextField();
+        tfEmail = createStyledTextField();
+        tfDate = createStyledTextField();
+
+        formPanel.add(createStyledLabel("NIC:"));
+        formPanel.add(tfNIC);
+        formPanel.add(createStyledLabel("Name:"));
+        formPanel.add(tfName);
+        formPanel.add(createStyledLabel("Address:"));
+        formPanel.add(tfAddress);
+        formPanel.add(createStyledLabel("TP Number Home:"));
+        formPanel.add(tfHome);
+        formPanel.add(createStyledLabel("Mobile:"));
+        formPanel.add(tfMobile);
+        formPanel.add(createStyledLabel("Email:"));
+        formPanel.add(tfEmail);
+        formPanel.add(createStyledLabel("Date:"));
+        formPanel.add(tfDate);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(CARD_COLOR);
+        buttonPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        
+        JButton btnAdd = createStyledButton("Add Customer", ACCENT_COLOR);
+        JButton btnUpdate = createStyledButton("Update", SECONDARY_COLOR);
+        JButton btnDelete = createStyledButton("Delete", new Color(204, 0, 0));
+        JButton btnAddVehicle = createStyledButton("Add Vehicle", SECONDARY_COLOR);
+        JButton btnClear = createStyledButton("Clear", SECONDARY_COLOR);
+
+        btnUpdate.setEnabled(false);
+        btnDelete.setEnabled(false);
+
+        buttonPanel.add(btnAdd);
+        buttonPanel.add(btnUpdate);
+        buttonPanel.add(btnDelete);
+        buttonPanel.add(btnAddVehicle);
+        buttonPanel.add(btnClear);
+
+        // Table
+        String[] columns = {"NIC", "Name", "Address", "TP Home", "Mobile", "Email", "Date"};
+        customerModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        customerTable = new JTable(customerModel);
+        styleTable(customerTable);
+
+        JScrollPane tablePane = new JScrollPane(customerTable);
+        tablePane.setBorder(BorderFactory.createEmptyBorder());
+        tablePane.setViewportBorder(BorderFactory.createEmptyBorder());
+
+        // Wrap form in a card
+        JPanel formCard = new JPanel(new BorderLayout());
+        formCard.setBackground(BACKGROUND_COLOR);
+        formCard.add(formPanel, BorderLayout.CENTER);
+        formCard.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add components to content panel
+        contentPanel.add(formCard, BorderLayout.NORTH);
+        contentPanel.add(tablePane, BorderLayout.CENTER);
+
+        panel.add(contentPanel, BorderLayout.CENTER);
+
+        // Event handlers
+        btnAdd.addActionListener(e -> addCustomer());
+        btnClear.addActionListener(e -> clearFields());
+        btnDelete.addActionListener(e -> deleteCustomer());
+        btnUpdate.addActionListener(e -> updateCustomer());
+        btnAddVehicle.addActionListener(e -> cardLayout.show(mainPanel, "Vehicles"));
+
+        customerTable.getSelectionModel().addListSelectionListener(e -> {
+            int row = customerTable.getSelectedRow();
+            if (row >= 0) {
+                tfNIC.setText(customerModel.getValueAt(row, 0).toString());
+                tfName.setText(customerModel.getValueAt(row, 1).toString());
+                tfAddress.setText(customerModel.getValueAt(row, 2).toString());
+                tfHome.setText(customerModel.getValueAt(row, 3).toString());
+                tfMobile.setText(customerModel.getValueAt(row, 4).toString());
+                tfEmail.setText(customerModel.getValueAt(row, 5).toString());
+                tfDate.setText(customerModel.getValueAt(row, 6).toString());
+                btnUpdate.setEnabled(true);
+                btnDelete.setEnabled(true);
+            }
+        });
+
+        return panel;
+    }
+
+    private JPanel createVehiclePanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Header Panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+        
+        JLabel titleLabel = new JLabel("Vehicle Management");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(60, 60, 60));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Search panel
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        searchPanel.setBackground(BACKGROUND_COLOR);
+        
+        JTextField searchField = new JTextField(20);
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        searchField.putClientProperty("JTextField.placeholderText", "Search vehicles...");
+        
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchBtn.setBackground(SECONDARY_COLOR);
+        searchBtn.setForeground(Color.WHITE);
+        searchBtn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        searchBtn.setFocusPainted(false);
+        
+        searchPanel.add(searchField);
+        searchPanel.add(searchBtn);
+        headerPanel.add(searchPanel, BorderLayout.EAST);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout(15, 15));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Form Panel
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 15, 15));
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                new RoundBorder(PRIMARY_COLOR, 10),
+                new EmptyBorder(15, 15, 15, 15)));
+        formPanel.setBackground(CARD_COLOR);
+
+        tfVehicleReg = createStyledTextField();
+        tfVehicleType = createStyledTextField();
+        tfVehicleMake = createStyledTextField();
+        tfVehicleModel = createStyledTextField();
+        tfVehicleYear = createStyledTextField();
+        tfVehicleColor = createStyledTextField();
+
+        formPanel.add(createStyledLabel("Vehicle Registration:"));
+        formPanel.add(tfVehicleReg);
+        formPanel.add(createStyledLabel("Vehicle Type:"));
+        formPanel.add(tfVehicleType);
+        formPanel.add(createStyledLabel("Vehicle Make:"));
+        formPanel.add(tfVehicleMake);
+        formPanel.add(createStyledLabel("Vehicle Model:"));
+        formPanel.add(tfVehicleModel);
+        formPanel.add(createStyledLabel("Vehicle Year:"));
+        formPanel.add(tfVehicleYear);
+        formPanel.add(createStyledLabel("Vehicle Color:"));
+        formPanel.add(tfVehicleColor);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(CARD_COLOR);
+        buttonPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        
+        JButton btnAddVehicle = createStyledButton("Add Vehicle", ACCENT_COLOR);
+        btnUpdateVehicle = createStyledButton("Update Vehicle", SECONDARY_COLOR);
+        btnDeleteVehicle = createStyledButton("Delete Vehicle", new Color(204, 0, 0));
+        JButton btnClearVehicle = createStyledButton("Clear", SECONDARY_COLOR);
+
+        btnUpdateVehicle.setEnabled(false);
+        btnDeleteVehicle.setEnabled(false);
+
+        buttonPanel.add(btnAddVehicle);
+        buttonPanel.add(btnUpdateVehicle);
+        buttonPanel.add(btnDeleteVehicle);
+        buttonPanel.add(btnClearVehicle);
+
+        // Table
+        String[] columns = {"Vehicle Reg", "Type", "Make", "Model", "Year", "Color", "Owner"};
+        vehicleModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        vehicleTable = new JTable(vehicleModel);
+        styleTable(vehicleTable);
+
+        JScrollPane tablePane = new JScrollPane(vehicleTable);
+        tablePane.setBorder(BorderFactory.createEmptyBorder());
+        tablePane.setViewportBorder(BorderFactory.createEmptyBorder());
+
+        // Wrap form in a card
+        JPanel formCard = new JPanel(new BorderLayout());
+        formCard.setBackground(BACKGROUND_COLOR);
+        formCard.add(formPanel, BorderLayout.CENTER);
+        formCard.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add components to content panel
+        contentPanel.add(formCard, BorderLayout.NORTH);
+        contentPanel.add(tablePane, BorderLayout.CENTER);
+
+        panel.add(contentPanel, BorderLayout.CENTER);
+
+        // Event handlers
+        btnAddVehicle.addActionListener(e -> addVehicle());
+        btnClearVehicle.addActionListener(e -> clearVehicleFields());
+        btnUpdateVehicle.addActionListener(e -> updateVehicle());
+        btnDeleteVehicle.addActionListener(e -> deleteVehicle());
+
+        vehicleTable.getSelectionModel().addListSelectionListener(e -> {
+            int row = vehicleTable.getSelectedRow();
+            if (row >= 0) {
+                tfVehicleReg.setText(vehicleModel.getValueAt(row, 0).toString());
+                tfVehicleType.setText(vehicleModel.getValueAt(row, 1).toString());
+                tfVehicleMake.setText(vehicleModel.getValueAt(row, 2).toString());
+                tfVehicleModel.setText(vehicleModel.getValueAt(row, 3).toString());
+                tfVehicleYear.setText(vehicleModel.getValueAt(row, 4).toString());
+                tfVehicleColor.setText(vehicleModel.getValueAt(row, 5).toString());
+                btnUpdateVehicle.setEnabled(true);
+                btnDeleteVehicle.setEnabled(true);
+            }
+        });
+
+        return panel;
+    }
+
+    private JPanel createServicePanel() {
+        JPanel panel = createGenericPanel("Add Vehicle to Service", 
+            new String[]{"Vehicle Registration:", "Owner:", "Service Type:"});
+        
+        // Customize for service panel
+        JLabel titleLabel = (JLabel) ((JPanel) panel.getComponent(0)).getComponent(0);
+        titleLabel.setText("Service Management");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        
+        return panel;
+    }
+
+    private JPanel createServiceResultPanel() {
+        return createGenericPanel("Service Results", 
+            new String[]{"Vehicle Registration:", "Result:", "Remarks:"});
+    }
+
+    private JPanel createVehicleReturnPanel() {
+        return createGenericPanel("Vehicle Returns", 
+            new String[]{"Vehicle Registration:", "Returned Date:"});
+    }
+
+    private JPanel createWaitingRepairPanel() {
+        return createGenericPanel("Waiting for Repair", 
+            new String[]{"Vehicle Registration:", "Issue:", "Remarks:"});
+    }
+
+    private JPanel createWaitingCleanPanel() {
+        return createGenericPanel("Waiting for Cleaning", 
+            new String[]{"Vehicle Registration:", "Status:"});
+    }
+
+    private JPanel createGenericPanel(String title, String[] labels) {
+        DefaultTableModel model = new DefaultTableModel(new String[labels.length], 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        // Header Panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+        
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        titleLabel.setForeground(new Color(60, 60, 60));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout(15, 15));
+        contentPanel.setBackground(BACKGROUND_COLOR);
+
+        // Form Panel
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+                new RoundBorder(PRIMARY_COLOR, 10),
+                new EmptyBorder(15, 15, 15, 15)));
+        formPanel.setBackground(CARD_COLOR);
+
+        JTextField[] textFields = new JTextField[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            JPanel fieldPanel = new JPanel(new BorderLayout(5, 5));
+            fieldPanel.setBackground(CARD_COLOR);
+            
+            JLabel label = createStyledLabel(labels[i]);
+            textFields[i] = createStyledTextField();
+            
+            fieldPanel.add(label, BorderLayout.NORTH);
+            fieldPanel.add(textFields[i], BorderLayout.CENTER);
+            
+            formPanel.add(fieldPanel);
+            if (i < labels.length - 1) {
+                formPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+            }
+        }
+
+        JButton btnAdd = createStyledButton("Add", ACCENT_COLOR);
+        btnAdd.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        formPanel.add(btnAdd);
+
+        // Table
+        JTable table = new JTable(model);
+        styleTable(table);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setViewportBorder(BorderFactory.createEmptyBorder());
+
+        // Add components to content panel
+        contentPanel.add(formPanel, BorderLayout.NORTH);
+        contentPanel.add(scrollPane, BorderLayout.CENTER);
+
+        panel.add(contentPanel, BorderLayout.CENTER);
+
+        // Event handler
+        btnAdd.addActionListener(e -> {
+            String[] data = new String[textFields.length];
+            for (int i = 0; i < textFields.length; i++) {
+                data[i] = textFields[i].getText();
+                textFields[i].setText("");
+            }
+            model.addRow(data);
+        });
+
+        return panel;
+    }
+
+    // Helper methods
+    private JTextField createStyledTextField() {
+        JTextField textField = new JTextField();
+        textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        textField.setBackground(new Color(250, 250, 250));
+        return textField;
+    }
+
+    private JLabel createStyledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        label.setForeground(new Color(80, 80, 80));
+        return label;
+    }
+
+    private JButton createStyledButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(bgColor.darker(), 1),
+                BorderFactory.createEmptyBorder(8, 20, 8, 20)));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(bgColor.brighter());
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(bgColor);
+            }
+        });
+        
+        return button;
+    }
+
+    private void styleTable(JTable table) {
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setRowHeight(30);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(HIGHLIGHT_COLOR);
+        table.setSelectionForeground(Color.BLACK);
+        table.setBorder(BorderFactory.createEmptyBorder());
+        
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setBackground(TABLE_HEADER_COLOR);
+        header.setForeground(Color.WHITE);
+        header.setBorder(BorderFactory.createEmptyBorder());
+        header.setPreferredSize(new Dimension(header.getWidth(), 35));
+    }
+
+    // Custom border for rounded corners
+    class RoundBorder extends AbstractBorder {
+        private Color color;
+        private int radius;
+        
+        public RoundBorder(Color color, int radius) {
+            this.color = color;
+            this.radius = radius;
+        }
+        
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.draw(new RoundRectangle2D.Double(x, y, width-1, height-1, radius, radius));
+            g2.dispose();
+        }
+        
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(radius+1, radius+1, radius+1, radius+1);
+        }
+        
+        @Override
+        public Insets getBorderInsets(Component c, Insets insets) {
+            insets.left = insets.right = insets.bottom = insets.top = radius+1;
+            return insets;
+        }
+    }
+
+    // Action methods (unchanged from original)
+    private void addCustomer() {
+        String[] data = {
+            tfNIC.getText(), tfName.getText(), tfAddress.getText(),
+            tfHome.getText(), tfMobile.getText(), tfEmail.getText(), tfDate.getText()
+        };
+        customerModel.addRow(data);
+        clearFields();
+    }
+
+    private void updateCustomer() {
+        int row = customerTable.getSelectedRow();
+        if (row >= 0) {
+            customerModel.setValueAt(tfNIC.getText(), row, 0);
+            customerModel.setValueAt(tfName.getText(), row, 1);
+            customerModel.setValueAt(tfAddress.getText(), row, 2);
+            customerModel.setValueAt(tfHome.getText(), row, 3);
+            customerModel.setValueAt(tfMobile.getText(), row, 4);
+            customerModel.setValueAt(tfEmail.getText(), row, 5);
+            customerModel.setValueAt(tfDate.getText(), row, 6);
+            clearFields();
+        }
+    }
+
+    private void deleteCustomer() {
+        int row = customerTable.getSelectedRow();
+        if (row >= 0) {
+            customerModel.removeRow(row);
+            clearFields();
+        }
+    }
+
+    private void addVehicle() {
+        int selectedRow = customerTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            String owner = customerModel.getValueAt(selectedRow, 1).toString();
+            String[] vehicleData = {
+                tfVehicleReg.getText(), tfVehicleType.getText(),
+                tfVehicleMake.getText(), tfVehicleModel.getText(),
+                tfVehicleYear.getText(), tfVehicleColor.getText(), owner
+            };
+            vehicleModel.addRow(vehicleData);
+            clearVehicleFields();
+        } else {
+            JOptionPane.showMessageDialog(frame, "Please select a customer first.", "Warning", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void updateVehicle() {
+        int row = vehicleTable.getSelectedRow();
+        if (row >= 0) {
+            vehicleModel.setValueAt(tfVehicleReg.getText(), row, 0);
+            vehicleModel.setValueAt(tfVehicleType.getText(), row, 1);
+            vehicleModel.setValueAt(tfVehicleMake.getText(), row, 2);
+            vehicleModel.setValueAt(tfVehicleModel.getText(), row, 3);
+            vehicleModel.setValueAt(tfVehicleYear.getText(), row, 4);
+            vehicleModel.setValueAt(tfVehicleColor.getText(), row, 5);
+            clearVehicleFields();
+        }
+    }
+
+    private void deleteVehicle() {
+        int row = vehicleTable.getSelectedRow();
+        if (row >= 0) {
+            vehicleModel.removeRow(row);
+            clearVehicleFields();
+        }
+    }
+
+    private void clearFields() {
+        tfNIC.setText(""); tfName.setText(""); tfAddress.setText("");
+        tfHome.setText(""); tfMobile.setText(""); tfEmail.setText(""); tfDate.setText("");
+    }
+
+    private void clearVehicleFields() {
+        tfVehicleReg.setText(""); tfVehicleType.setText(""); tfVehicleMake.setText("");
+        tfVehicleModel.setText(""); tfVehicleYear.setText(""); tfVehicleColor.setText("");
+    }
+}
