@@ -1,0 +1,102 @@
+-- Create database
+CREATE DATABASE IF NOT EXISTS rimax_auto;
+USE rimax_auto;
+
+-- Customers table
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    nic VARCHAR(20) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    address TEXT,
+    home_phone VARCHAR(15),
+    mobile VARCHAR(15),
+    email VARCHAR(100),
+    registration_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Vehicles table
+CREATE TABLE IF NOT EXISTS vehicles (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    registration_number VARCHAR(20) NOT NULL UNIQUE,
+    vehicle_type VARCHAR(50),
+    make VARCHAR(50),
+    model VARCHAR(50),
+    year INT,
+    color VARCHAR(30),
+    owner_nic VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_nic) REFERENCES customers(nic) ON DELETE CASCADE
+);
+
+-- Services table
+CREATE TABLE IF NOT EXISTS services (
+    service_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_registration VARCHAR(20) NOT NULL,
+    service_type VARCHAR(100) NOT NULL,
+    service_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('Pending', 'In Progress', 'Completed') DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_registration) REFERENCES vehicles(registration_number) ON DELETE CASCADE
+);
+
+-- Service results table
+CREATE TABLE IF NOT EXISTS service_results (
+    result_id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT NOT NULL,
+    vehicle_registration VARCHAR(20) NOT NULL,
+    result_details TEXT,
+    remarks TEXT,
+    result_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_registration) REFERENCES vehicles(registration_number) ON DELETE CASCADE
+);
+
+-- Vehicle returns table
+CREATE TABLE IF NOT EXISTS vehicle_returns (
+    return_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_registration VARCHAR(20) NOT NULL,
+    return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_registration) REFERENCES vehicles(registration_number) ON DELETE CASCADE
+);
+
+-- Waiting for repair table
+CREATE TABLE IF NOT EXISTS waiting_repair (
+    repair_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_registration VARCHAR(20) NOT NULL,
+    issue_description TEXT NOT NULL,
+    remarks TEXT,
+    status ENUM('Waiting', 'In Progress', 'Completed') DEFAULT 'Waiting',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_registration) REFERENCES vehicles(registration_number) ON DELETE CASCADE
+);
+
+-- Waiting for cleaning table
+CREATE TABLE IF NOT EXISTS waiting_clean (
+    clean_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_registration VARCHAR(20) NOT NULL,
+    status ENUM('Waiting', 'In Progress', 'Completed') DEFAULT 'Waiting',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_registration) REFERENCES vehicles(registration_number) ON DELETE CASCADE
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_customer_nic ON customers(nic);
+CREATE INDEX idx_vehicle_reg ON vehicles(registration_number);
+CREATE INDEX idx_vehicle_owner ON vehicles(owner_nic);
+CREATE INDEX idx_service_vehicle ON services(vehicle_registration);
+CREATE INDEX idx_service_result ON service_results(vehicle_registration);
+CREATE INDEX idx_waiting_repair ON waiting_repair(vehicle_registration);
+CREATE INDEX idx_waiting_clean ON waiting_clean(vehicle_registration);
+
